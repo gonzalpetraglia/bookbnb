@@ -4,8 +4,8 @@
   "description": "Simple smart contract to handle the payment on bnbooking",
   "main": "index.js",
   "scripts": {
-    "test": "truffle test",
-    "test-debug": "truffle test --debug",
+    "test": "./scripts/test.sh",
+    "test-debug": "./scripts/test.sh --debug",
     "build": "truffle compile",
     "lint-sc": "solium -d contracts/",
     "lint-js": "eslint 'test/**/*.js' 'migrations/**/*.js'",
