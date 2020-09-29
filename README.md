@@ -1,5 +1,7 @@
 # BookBnB
 
+![Node.js CI](https://github.com/gonzalpetraglia/bookbnb/workflows/Node.js%20CI/badge.svg?branch=master)
+
 This is the repository that keeps the Smart Contract of the BookBnB project.
 
 This is for educational purposes do not use this in production
