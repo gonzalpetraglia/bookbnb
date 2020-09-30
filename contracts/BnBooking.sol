@@ -51,12 +51,6 @@ contract BnBooking is Ownable, ReentrancyGuard, BnBookingEvents {
         _;
     }
 
-    function claimPayments() public nonReentrant {
-        uint256 accumulatedPayment = accumulatedPayments[msg.sender];
-        msg.sender.transfer(accumulatedPayment);
-        emit PaymentSent(msg.sender, accumulatedPayment);
-    }
-
     function createRoom(uint256 price) public {
         require(price > 0, "Price cant be zero");
         uint256 roomId = nextRoomId++;
