@@ -89,14 +89,12 @@ contract BnBooking is Ownable, ReentrancyGuard, BnBookingEvents {
         emit RoomBooked(roomId, msg.sender, room.price, day, month, year);
     }
 
-
     function removeRoom(uint256 roomId) public roomExists(roomId) {
         Room storage toRemove = rooms[roomId];
         require(toRemove.owner == msg.sender || owner() == msg.sender, "Not owner");
         delete(rooms[roomId]);
         emit RoomRemoved(msg.sender, roomId);
     }
-
 
     function changePrice(uint256 roomId, uint256 newPrice) public roomExists(roomId) {
         Room storage toChange = rooms[roomId];
