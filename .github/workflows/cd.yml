@@ -22,6 +22,8 @@ jobs:
         with:
           node-version: ${{ matrix.node-version }}
       - run: npm ci
-      - run: npm test
-      - run: npm run lint
-      - run: npm run deploy-ropsten
+      - name: Deploy
+        env:
+          INFURA_ROPSTEN_NODE: ${{secrets.INFURA_ROPSTEN_NODE}}
+          MNEMONIC: ${{secrets.MNEMONIC}}
+        run: npm run deploy-ropsten
