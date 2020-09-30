@@ -9,6 +9,7 @@ contract BnBookingEvents {
     event PaymentSent(address indexed paymentReceiver, uint256 price);
     event RoomCreated(address indexed owner, uint256 indexed roomId, uint256 price);
     event RoomRemoved(address indexed owner, uint256 indexed roomId);
+    event PriceChanged(address indexed owner, uint256 indexed roomId, uint256 newPrice);
 }
 
 contract BnBooking is Ownable, ReentrancyGuard, BnBookingEvents {
@@ -107,6 +108,7 @@ contract BnBooking is Ownable, ReentrancyGuard, BnBookingEvents {
         Room storage toChange = rooms[roomId];
         require(toChange.owner == msg.sender, "Not owner");
         toChange.price = newPrice;
+        emit PriceChanged(msg.sender, roomId, newPrice);
     }
 
     function withdraw() public nonReentrant {

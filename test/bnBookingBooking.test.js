@@ -20,7 +20,7 @@ contract('GIVEN someone created a room and someone booked a date', function ([
   before(async function () {
     this.price = '10000000000000000';
     this.bnBooking = await BnBooking.deployed();
-    this.bnBooking.createRoom(this.price, { from: roomOwner });
+    await this.bnBooking.createRoom(this.price, { from: roomOwner });
     this.tx = await this.bnBooking.book(0, 1, 1, 2020, {
       from: firstBooker,
       value: this.price,
