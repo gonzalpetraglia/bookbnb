@@ -36,14 +36,32 @@ npm run lint
 
 ## Deploy
 
-For the deployment of this project you have to options:
+For the deployment of this project in each network read the relevant subsection.
+
+The configs to be used are set on `migrations/config.json`
+
+### Local
+
+For this you have to have ganache, or any eth-json-rpc server, running on http://localhost:8545. This can be achieved executing:
+
+```sh
+npm run ganache
+```
+
+And later deploy using:
 
 ```sh
 npm run deploy-local
 ```
 
+### Ropsten
+
+For the Ropsten deployment you, having `INFURA_ROPSTEN_NODE`(URL given by infura) and `MNEMONIC`(12 words with balance in the ropsten network) set as environment variables, have to run:
+
 ```sh
 npm run deploy-ropsten
 ```
 
-The configs used are set on `migrations/config.json`
+### Other networks
+
+In order to deploy in other networks, you first have to define the network in `truffle-config.js` and later define a script analog to the deploy-\* scripts.
