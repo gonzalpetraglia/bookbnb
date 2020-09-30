@@ -1,4 +1,4 @@
-const { expect, use } = require('chai');
+const { use } = require('chai');
 const chaiAsPromiesd = require('chai-as-promised');
 const bnChai = require('bn-chai');
 const { expectRevert, expectEvent, BN } = require('openzeppelin-test-helpers');
@@ -10,7 +10,7 @@ use(bnChai(BN));
 
 const PRICE_NOT_REACHED = 'Price not reached';
 
-contract('GIVEN someone created a room', function ([, roomOwner, booker]) {
+contract('GIVEN someone created a room', function ([, roomOwner]) {
   before(async function () {
     this.initialPrice = '100000000000000000';
     this.newPrice = '200000000000000000';
