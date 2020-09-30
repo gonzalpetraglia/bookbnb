@@ -43,7 +43,7 @@ npm run deploy-local
 ```
 
 ```sh
-npm run deploy-testnet
+npm run deploy-ropsten
 ```
 
 The configs used are set on `migrations/config.json`
