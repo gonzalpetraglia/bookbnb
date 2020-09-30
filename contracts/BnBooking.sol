@@ -9,6 +9,7 @@ contract BnBookingEvents {
     event PaymentSent(address indexed paymentReceiver, uint256 price);
     event RoomCreated(address indexed owner, uint256 indexed roomId, uint256 price);
     event RoomRemoved(address indexed owner, uint256 indexed roomId);
+    event PriceChanged(address indexed owner, uint256 indexed roomId, uint256 newPrice);
 }
 
 contract BnBooking is Ownable, ReentrancyGuard, BnBookingEvents {
@@ -48,12 +49,6 @@ contract BnBooking is Ownable, ReentrancyGuard, BnBookingEvents {
         require(roomId < nextRoomId, "Room has not been created");
         require(rooms[roomId].owner != address(0), "Room has been removed");
         _;
-    }
-
-    function claimPayments() public nonReentrant {
-        uint256 accumulatedPayment = accumulatedPayments[msg.sender];
-        msg.sender.transfer(accumulatedPayment);
-        emit PaymentSent(msg.sender, accumulatedPayment);
     }
 
     function createRoom(uint256 price) public {
@@ -107,6 +102,7 @@ contract BnBooking is Ownable, ReentrancyGuard, BnBookingEvents {
         Room storage toChange = rooms[roomId];
         require(toChange.owner == msg.sender, "Not owner");
         toChange.price = newPrice;
+        emit PriceChanged(msg.sender, roomId, newPrice);
     }
 
     function withdraw() public nonReentrant {
