@@ -12,12 +12,13 @@
     "lint": "npm run lint-js && npm run lint-sc",
     "coverage": "truffle run coverage",
     "deploy-local": "truffle migrate --network development",
-    "deploy-testnet": "truffle migrate --network testnet",
+    "deploy-ropsten": "truffle migrate --network ropsten",
     "ganache": "ganache-cli --deterministic"
   },
   "author": "",
   "license": "MIT",
   "dependencies": {
+    "@truffle/hdwallet-provider": "1.1.0",
     "openzeppelin-solidity": "3.2.0",
     "truffle": "5.1.46"
   },
