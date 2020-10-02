@@ -5,11 +5,37 @@ import "openzeppelin-solidity/contracts/utils/ReentrancyGuard.sol";
 import "openzeppelin-solidity/contracts/math/SafeMath.sol";
 
 contract BnBookingEvents {
-    event RoomBooked(uint256 indexed roomId, address indexed booker, uint256 price, uint256 day, uint256 month, uint256 year);
+    event RoomBooked(
+        uint256 indexed roomId,
+        address indexed booker,
+        address indexed owner,
+        uint256 price,
+        uint256 day,
+        uint256 month,
+        uint256 year
+    );
     event PaymentSent(address indexed paymentReceiver, uint256 price);
     event RoomCreated(address indexed owner, uint256 indexed roomId, uint256 price);
     event RoomRemoved(address indexed owner, uint256 indexed roomId);
     event PriceChanged(address indexed owner, uint256 indexed roomId, uint256 newPrice);
+    event BookIntentCreated(
+        uint256 indexed roomId,
+        address indexed booker,
+        address indexed owner,
+        uint256 price,
+        uint256 day,
+        uint256 month,
+        uint256 year
+    );
+    event BookIntentRejected(
+        uint256 indexed roomId,
+        address indexed booker,
+        address indexed owner,
+        uint256 price,
+        uint256 day,
+        uint256 month,
+        uint256 year
+    );
 }
 
 contract BnBooking is Ownable, ReentrancyGuard, BnBookingEvents {
@@ -21,7 +47,18 @@ contract BnBooking is Ownable, ReentrancyGuard, BnBookingEvents {
         uint256 price;
     }
 
-    mapping (uint256 => mapping (bytes32 => address)) public bookings; // bookings: roomId -> hash(date) -> booker
+    struct BookingIntent {
+        uint256 price;
+        uint256 positionBooker;
+    }
+
+    // bookings: roomId -> hash(date) -> booker
+    mapping (uint256 => mapping (bytes32 => address)) internal bookings;
+
+    // bookingIntents: roomId -> hash(date) -> possibleBooker -> bookingIntent
+    mapping (uint256 => mapping (bytes32 => mapping (address => BookingIntent))) internal bookingIntents;
+
+    mapping (uint256 => mapping (bytes32 => address[])) internal possibleBookers;
 
     mapping (address => uint256) public accumulatedPayments;
 
@@ -29,11 +66,13 @@ contract BnBooking is Ownable, ReentrancyGuard, BnBookingEvents {
 
     uint256 public nextRoomId = 0;
 
-    uint256 private constant FEE_RATE_PRECISION = 10 ** 18;
-
     uint256 public feeRate;
 
     address public feeReceiver;
+
+    uint256 public constant FEE_RATE_PRECISION = 10 ** 18;
+
+    uint256 public constant MAX_INTENTS = 5;
 
     constructor(uint256 _feeRate, address _feeReceiver) public {
         feeRate = _feeRate;
@@ -74,20 +113,80 @@ contract BnBooking is Ownable, ReentrancyGuard, BnBookingEvents {
         return bookings[roomId][getDateId(day, month, year)] != address(0);
     }
 
-    function book(uint256 roomId, uint256 day, uint256 month, uint256 year) public payable validDate(day, month, year) roomExists(roomId) {
+    function intentBook(uint256 roomId, uint256 day, uint256 month, uint256 year) public payable validDate(day, month, year) roomExists(roomId) {
         require(!booked(roomId, day, month, year), "Room not available");
-
+        require(bookingIntents[roomId][getDateId(day, month, year)][msg.sender].price == 0, "Intent already created");
         Room storage room = rooms[roomId];
+        require(room.owner != msg.sender, "Cannot book your own room");
 
         require(msg.value >= room.price, "Price not reached");
 
         msg.sender.transfer(msg.value.sub(room.price));
 
-        splitPayment(room.owner, room.price);
-        bookings[roomId][getDateId(day, month, year)] = msg.sender;
+        require(possibleBookers[roomId][getDateId(day, month, year)].length < MAX_INTENTS, "Max intents reached");
+        possibleBookers[roomId][getDateId(day, month, year)].push(msg.sender);
+        bookingIntents[roomId][getDateId(day, month, year)][msg.sender] = BookingIntent({
+            price: room.price,
+            positionBooker: possibleBookers[roomId][getDateId(day, month, year)].length - 1
+        });
 
-        emit RoomBooked(roomId, msg.sender, room.price, day, month, year);
+        emit BookIntentCreated(
+            roomId,
+            msg.sender,
+            room.owner,
+            room.price,
+            day,
+            month,
+            year
+        );
     }
+
+    function reject(uint256 roomId, address booker, uint256 day, uint256 month, uint256 year) public roomExists(roomId) {
+        Room storage room = rooms[roomId];
+        require(room.owner == msg.sender, "Not owner");
+        BookingIntent storage intent = bookingIntents[roomId][getDateId(day, month, year)][booker];
+        require(intent.price != 0, "Intent not found");
+        emit BookIntentRejected(
+            roomId,
+            booker,
+            msg.sender,
+            intent.price,
+            day,
+            month,
+            year
+        );
+        _reject(roomId, booker, day, month, year);
+        moveLastPossibleBooker(roomId, intent.positionBooker, day, month, year);
+    }
+
+    function accept(uint256 roomId, address booker, uint256 day, uint256 month, uint256 year) public roomExists(roomId) {
+        Room storage room = rooms[roomId];
+        require(room.owner == msg.sender, "Not owner");
+        BookingIntent storage intent = bookingIntents[roomId][getDateId(day, month, year)][booker];
+        require(intent.price != 0, "Intent not found");
+        address[] storage intenters = possibleBookers[roomId][getDateId(day, month, year)];
+        uint256 numberIntenters = intenters.length;
+        for (uint256 i = 0; i < numberIntenters; i++) {
+            if (intenters[i] == booker)
+                continue;
+            _reject(roomId, intenters[i], day, month, year);
+        }
+        splitPayment(msg.sender, intent.price);
+
+        bookings[roomId][getDateId(day, month, year)] = booker;
+        emit RoomBooked(
+            roomId,
+            booker,
+            msg.sender,
+            intent.price,
+            day,
+            month,
+            year
+        );
+        delete bookingIntents[roomId][getDateId(day, month, year)][booker];
+        delete possibleBookers[roomId][getDateId(day, month, year)];
+    }
+
 
     function removeRoom(uint256 roomId) public roomExists(roomId) {
         Room storage toRemove = rooms[roomId];
@@ -110,9 +209,26 @@ contract BnBooking is Ownable, ReentrancyGuard, BnBookingEvents {
         emit PaymentSent(msg.sender, paymentToWithdraw);
     }
 
-    function splitPayment(address receiver, uint256 price) internal {
-        accumulatedPayments[receiver] = price.mul(feeRate).div(FEE_RATE_PRECISION);
-        accumulatedPayments[feeReceiver] = price.sub(price.mul(feeRate).div(FEE_RATE_PRECISION));
+    function _reject(uint256 roomId, address booker, uint256 day, uint256 month, uint256 year) internal {
+        BookingIntent storage intent = bookingIntents[roomId][getDateId(day, month, year)][booker];
+        addPayment(booker, intent.price);
+        delete bookingIntents[roomId][getDateId(day, month, year)][booker];
+    }
+
+    function moveLastPossibleBooker(uint256 roomId, uint256 newBookerPostion, uint256 day, uint256 month, uint256 year) internal {
+        address movedBooker = possibleBookers[roomId][getDateId(day, month, year)][newBookerPostion];
+        possibleBookers[roomId][getDateId(day, month, year)].pop();
+        bookingIntents[roomId][getDateId(day, month, year)][movedBooker].positionBooker = newBookerPostion;
+    }
+
+    function splitPayment(address paymentReceiver, uint256 totalPayment) internal {
+        uint256 fees = totalPayment.mul(feeRate).div(FEE_RATE_PRECISION);
+        addPayment(feeReceiver, fees);
+        addPayment(paymentReceiver, totalPayment.sub(fees));
+    }
+
+    function addPayment(address receiver, uint256 payment) internal {
+        accumulatedPayments[receiver] = accumulatedPayments[receiver].add(payment);
     }
 
 
