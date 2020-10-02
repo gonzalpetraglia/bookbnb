@@ -10,14 +10,14 @@ use(bnChai(BN));
 
 const ROOM_HAS_NOT_BEEN_CREATED = 'Room has not been created';
 
-contract('GIVEN there has not been any room created', function ([owner]) {
+contract('GIVEN there has not been any room created', function ([owner, randomAddress]) {
   before(async function () {
     this.bnBooking = await BnBooking.deployed();
   });
   describe('WHEN someone tries to book one', function () {
     it('THEN the tx fails', async function () {
       return expectRevert(
-        this.bnBooking.book(1, 1, 1, 2020, { from: owner }),
+        this.bnBooking.intentBook(1, 1, 1, 2020, { from: owner }),
         ROOM_HAS_NOT_BEEN_CREATED
       );
     });
@@ -31,6 +31,22 @@ contract('GIVEN there has not been any room created', function ([owner]) {
     it('THEN the tx fails', async function () {
       return expectRevert(
         this.bnBooking.changePrice(0, 1, { from: owner }),
+        ROOM_HAS_NOT_BEEN_CREATED
+      );
+    });
+  });
+  describe('WHEN someone tries to accept an intent of one', function () {
+    it('THEN the tx fails', async function () {
+      return expectRevert(
+        this.bnBooking.accept(0, randomAddress, 1, 1, 2020, { from: owner }),
+        ROOM_HAS_NOT_BEEN_CREATED
+      );
+    });
+  });
+  describe('WHEN someone tries to reject an intent of one', function () {
+    it('THEN the tx fails', async function () {
+      return expectRevert(
+        this.bnBooking.reject(0, randomAddress, 1, 1, 2020, { from: owner }),
         ROOM_HAS_NOT_BEEN_CREATED
       );
     });

@@ -45,13 +45,13 @@ contract('GIVEN someone created a room and changed its price(to a greater one)',
   });
   describe('WHEN someone tries to book with the new price as payment', function () {
     before(async function () {
-      this.tx = await this.bnBooking.book(0, 1, 1, 2020, {
+      this.tx = await this.bnBooking.intentBook(0, 1, 1, 2020, {
         from: booker,
         value: new BN(this.newPrice),
       });
     });
     it('THEN an event was emitted', async function () {
-      return expectEvent(this.tx, 'RoomBooked', {
+      return expectEvent(this.tx, 'BookIntentCreated', {
         roomId: new BN(0),
         day: new BN(1),
         month: new BN(1),
@@ -77,7 +77,7 @@ contract('GIVEN someone created a room and changed its price(to a greater one)',
   describe('WHEN someone tries to book with the old price as payment', function () {
     it('THEN the tx reverts', async function () {
       return expectRevert(
-        this.bnBooking.book(0, 1, 1, 2020, {
+        this.bnBooking.intentBook(0, 1, 1, 2020, {
           from: booker,
           value: new BN(this.initialPrice),
         }),

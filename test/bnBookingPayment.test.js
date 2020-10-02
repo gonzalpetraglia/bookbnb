@@ -17,10 +17,11 @@ contract('GIVEN someone created a room and booked a room(and paid the room owner
     this.price = '100000000000000000';
     this.bnBooking = await BnBooking.deployed();
     await this.bnBooking.createRoom(this.price, { from: roomOwner });
-    await this.bnBooking.book(0, 1, 1, 2020, {
+    await this.bnBooking.intentBook(0, 1, 1, 2020, {
       from: booker,
       value: new BN(this.price),
     });
+    await this.bnBooking.accept(0, booker, 1, 1, 2020, { from: roomOwner });
     return expect(await this.bnBooking.accumulatedPayments(roomOwner)).to.eq.BN(
       // Assuming 50% fee rate
       new BN(this.price).div(new BN(2))

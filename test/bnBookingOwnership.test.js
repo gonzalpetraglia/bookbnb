@@ -30,3 +30,51 @@ contract('GIVEN someone created a room', function ([, roomOwner, otherUser]) {
     });
   });
 });
+
+contract('GIVEN someone created a room and someone created an intent to book it', function ([
+  ,
+  roomOwner,
+  booker,
+]) {
+  before(async function () {
+    this.price = '100000000000000000';
+    this.bnBooking = await BnBooking.deployed();
+    await this.bnBooking.createRoom(this.price, { from: roomOwner });
+    await this.bnBooking.intentBook(0, 1, 1, 2020, {
+      from: booker,
+      value: new BN(this.price),
+    });
+  });
+  describe('WHEN someone else(and not the owner) tries to accept it', function () {
+    it('THEN the tx reverts', async function () {
+      return expectRevert(
+        this.bnBooking.accept(0, booker, 1, 1, 2020, { from: booker }),
+        NOT_OWNER
+      );
+    });
+  });
+});
+
+contract('GIVEN someone created a room and someone created an intent to book it', function ([
+  ,
+  roomOwner,
+  booker,
+]) {
+  before(async function () {
+    this.price = '100000000000000000';
+    this.bnBooking = await BnBooking.deployed();
+    await this.bnBooking.createRoom(this.price, { from: roomOwner });
+    await this.bnBooking.intentBook(0, 1, 1, 2020, {
+      from: booker,
+      value: new BN(this.price),
+    });
+  });
+  describe('WHEN someone else(and not the owner) tries to reject it', function () {
+    it('THEN the tx reverts', async function () {
+      return expectRevert(
+        this.bnBooking.reject(0, booker, 1, 1, 2020, { from: booker }),
+        NOT_OWNER
+      );
+    });
+  });
+});

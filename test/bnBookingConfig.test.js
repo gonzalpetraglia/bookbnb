@@ -29,6 +29,7 @@ contract('GIVEN the contract is deployed', function ([owner, normalUser]) {
 contract('GIVEN the contract has changed the receiver and the feeRate', function ([
   owner,
   normalUser,
+  booker,
 ]) {
   before(async function () {
     this.bnBooking = await BnBooking.deployed();
@@ -39,13 +40,14 @@ contract('GIVEN the contract has changed the receiver and the feeRate', function
   });
   describe('WHEN a user books a room', function () {
     before(async function () {
-      return this.bnBooking.book(0, 1, 1, 2020, { from: normalUser, value: this.price });
+      await this.bnBooking.intentBook(0, 1, 1, 2020, { from: booker, value: this.price });
+      return this.bnBooking.accept(0, booker, 1, 1, 2020, { from: owner });
     });
     it('THEN the new receiver receives the new fee', async function () {
-      return expect(await this.bnBooking.accumulatedPayments(owner)).to.eq.BN(this.price);
+      return expect(await this.bnBooking.accumulatedPayments(normalUser)).to.eq.BN(this.price);
     });
     it('THEN the owner receives the rest', async function () {
-      return expect(await this.bnBooking.accumulatedPayments(normalUser)).to.eq.BN(0);
+      return expect(await this.bnBooking.accumulatedPayments(owner)).to.eq.BN(0);
     });
   });
 });
